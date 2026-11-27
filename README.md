@@ -34,37 +34,14 @@ Pastikan file driver **MySQL Connector/J** (`.jar`) berada di dalam folder proje
 2. **Compile** file Java (`Server.java` dan `KoneksiDB.java`):
 * **Windows:**
 ```cmd
-javac -cp ".;mysql-connector-j.jar" Server.java KoneksiDB.java
-
+javac -cp "../lib/mysql-connector-j-26.10.0.jar" *.java
 ```
-
-
-* **Mac / Linux:**
-```bash
-javac -cp ".:mysql-connector-j.jar" Server.java KoneksiDB.java
-
-```
-
-
-
-
 *(Catatan: Sesuaikan `mysql-connector-j.jar` dengan nama file driver `.jar` yang digunakan).*
 3. **Jalankan** Server Java:
 * **Windows:**
 ```cmd
 java -cp ".;mysql-connector-j.jar" Server
-
 ```
-
-
-* **Mac / Linux:**
-```bash
-java -cp ".:mysql-connector-j.jar" Server
-
-```
-
-
-
 
 4. Jika berhasil, terminal akan menampilkan pesan:
 ```text
