@@ -46,7 +46,6 @@ java -cp ".;mysql-connector-j.jar" Server
 4. Jika berhasil, terminal akan menampilkan pesan:
 ```text
 === SERVER JAVA BERHASIL JALAN DI http://localhost:8080 ===
-
 ```
 
 
