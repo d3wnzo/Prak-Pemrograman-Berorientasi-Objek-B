@@ -120,7 +120,7 @@ public class Server {
         }
     }
 
-    // 3. Handler Melakukan Pemesanan (Checkout)
+    // 3. Handler Melakukan Pemesanan (Checkout - Tanpa Ongkir)
     static class PesanHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -142,18 +142,15 @@ public class Server {
                 String idUserStr = extractJsonValue(reqBody, "id_user");
                 int idUser = idUserStr != null ? Integer.parseInt(idUserStr) : 1;
 
-                // Simulasi Produk Bibit & Total Harga
-                int totalHarga = 15000;
-                int ongkir = 10000;
+                int totalHarga = 15000; // Harga tetap bibit
 
-                // Simpan ke database MySQL
+                // Simpan ke database MySQL (Tanpa kolom ongkir)
                 try (Connection conn = KoneksiDB.getConnection()) {
-                    String sql = "INSERT INTO pesanan (id_user, total_harga, ongkir, status_pesanan) VALUES (?, ?, ?, ?)";
+                    String sql = "INSERT INTO pesanan (id_user, total_harga, status_pesanan) VALUES (?, ?, ?)";
                     PreparedStatement stmt = conn.prepareStatement(sql);
                     stmt.setInt(1, idUser);              
-                    stmt.setInt(2, totalHarga); 
-                    stmt.setInt(3, ongkir);          
-                    stmt.setString(4, "Pending");   
+                    stmt.setInt(2, totalHarga);          
+                    stmt.setString(3, "Pending");   
 
                     stmt.executeUpdate();
                     System.out.println("[SUKSES] Pesanan dari User ID " + idUser + " masuk ke database!");
@@ -170,7 +167,7 @@ public class Server {
         }
     }
 
-    // 4. Handler Admin - Melihat & Mengelola Pesanan (GET)
+    // 4. Handler Admin - Melihat & Mengelola Pesanan (GET - Tanpa Ongkir)
     static class AdminPesananHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -187,7 +184,7 @@ public class Server {
                      Statement stmt = conn.createStatement();
                      ResultSet rs = stmt.executeQuery(
                          "SELECT p.id_pesanan, COALESCE(u.nama_lengkap, 'Guest') AS nama_customer, " +
-                         "p.total_harga, p.ongkir, p.status_pesanan, p.tanggal_pesanan " +
+                         "p.total_harga, p.status_pesanan, p.tanggal_pesanan " +
                          "FROM pesanan p LEFT JOIN users u ON p.id_user = u.id_user"
                      )) {
                     
@@ -198,7 +195,6 @@ public class Server {
                         jsonBuilder.append("\"id_pesanan\":").append(rs.getInt("id_pesanan")).append(",");
                         jsonBuilder.append("\"nama_customer\":\"").append(rs.getString("nama_customer")).append("\",");
                         jsonBuilder.append("\"total_harga\":").append(rs.getInt("total_harga")).append(",");
-                        jsonBuilder.append("\"ongkir\":").append(rs.getInt("ongkir")).append(",");
                         jsonBuilder.append("\"status_pesanan\":\"").append(rs.getString("status_pesanan")).append("\",");
                         jsonBuilder.append("\"tanggal_pesanan\":\"").append(rs.getString("tanggal_pesanan") != null ? rs.getString("tanggal_pesanan") : "-").append("\"");
                         jsonBuilder.append("}");
@@ -263,7 +259,7 @@ public class Server {
         }
     }
 
-    // 6. Handler Customer - Melihat Status Pesanan Sendiri (POST)
+    // 6. Handler Customer - Melihat Status Pesanan Sendiri (POST - Tanpa Ongkir)
     static class CustomerPesananHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -286,7 +282,7 @@ public class Server {
 
                 StringBuilder jsonBuilder = new StringBuilder("[");
                 try (Connection conn = KoneksiDB.getConnection()) {
-                    String sql = "SELECT * FROM pesanan WHERE id_user = ?";
+                    String sql = "SELECT id_pesanan, total_harga, status_pesanan, tanggal_pesanan FROM pesanan WHERE id_user = ?";
                     PreparedStatement stmt = conn.prepareStatement(sql);
                     stmt.setInt(1, idUser);
                     ResultSet rs = stmt.executeQuery();
@@ -297,7 +293,6 @@ public class Server {
                         jsonBuilder.append("{");
                         jsonBuilder.append("\"id_pesanan\":").append(rs.getInt("id_pesanan")).append(",");
                         jsonBuilder.append("\"total_harga\":").append(rs.getInt("total_harga")).append(",");
-                        jsonBuilder.append("\"ongkir\":").append(rs.getInt("ongkir")).append(",");
                         jsonBuilder.append("\"status_pesanan\":\"").append(rs.getString("status_pesanan")).append("\",");
                         jsonBuilder.append("\"tanggal_pesanan\":\"").append(rs.getString("tanggal_pesanan") != null ? rs.getString("tanggal_pesanan") : "-").append("\"");
                         jsonBuilder.append("}");
