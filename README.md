@@ -40,7 +40,7 @@ javac -cp "../lib/mysql-connector-j-26.10.0.jar" *.java
 3. **Jalankan** Server Java:
 * **Windows:**
 ```cmd
-java -cp ".;mysql-connector-j.jar" Server
+java -cp "../lib/mysql-connector-j-26.10.0.jar" Server
 ```
 
 4. Jika berhasil, terminal akan menampilkan pesan:
