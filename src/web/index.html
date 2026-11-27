@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pemesanan - Penjualan Bibit Pepaya</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container { max-width: 600px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin: 40px auto; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50; }
+        select, button { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 15px; }
+        button { background-color: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #219653; }
+        .btn-logout { background-color: #e74c3c; width: auto; padding: 8px 15px; font-size: 14px; }
+        .btn-logout:hover { background-color: #c0392b; }
+        .nav-riwayat { text-align: right; margin-bottom: 15px; }
+        .nav-riwayat a { color: #2980b9; font-weight: 600; text-decoration: none; }
+        .nav-riwayat a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-flex">
+        <h2>Katalog & Pesan Bibit Pepaya</h2>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+
+    <p id="welcome-user" style="font-weight: 600; color: #2c3e50; margin-bottom: 10px;"></p>
+
+    <div class="nav-riwayat">
+        <a href="riwayat.html">Melihat Status Pesanan Saya →</a>
+    </div>
+
+    <div class="form-group">
+        <label for="select-kategori">Pilih Kategori Bibit:</label>
+        <select id="select-kategori">
+            <option value="">Memuat katalog...</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <button onclick="kirimPesanan()">Konfirmasi Pesanan</button>
+    </div>
+
+    <p id="status-pesan" style="text-align: center; font-weight: bold; margin-top: 15px;"></p>
+</div>
+
+<script>
+    const idUser = localStorage.getItem('id_user');
+    const namaUser = localStorage.getItem('nama');
+    const role = localStorage.getItem('role');
+
+    if (!idUser || role !== 'customer') {
+        alert("Silakan login sebagai customer terlebih dahulu!");
+        window.location.href = 'login.html';
+    } else {
+        document.getElementById('welcome-user').textContent = "Halo, " + namaUser + " (Customer)";
+    }
+
+    // Ambil data kategori / katalog dari backend Java
+    fetch('http://localhost:8080/api/kategori')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('select-kategori');
+            select.innerHTML = '';
+
+            if (data.length === 0) {
+                select.innerHTML = '<option value="">Katalog tidak tersedia</option>';
+                return;
+            }
+
+            data.forEach(kat => {
+                let opt = document.createElement('option');
+                opt.value = kat.id;
+                opt.textContent = kat.nama_kategori;
+                select.appendChild(opt);
+            });
+        })
+        .catch(err => {
+            console.error('Gagal memuat katalog:', err);
+            document.getElementById('select-kategori').innerHTML = '<option value="">Gagal terhubung ke server</option>';
+        });
+
+    function kirimPesanan() {
+        const kategoriId = document.getElementById('select-kategori').value;
+        const statusPesan = document.getElementById('status-pesan');
+
+        if (!kategoriId) {
+            alert("Tolong pilih kategori bibit terlebih dahulu!");
+            return;
+        }
+
+        statusPesan.style.color = "#2980b9";
+        statusPesan.textContent = "Memproses pesanan...";
+
+        fetch('http://localhost:8080/api/pesan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                id_user: idUser, 
+                kategori_id: kategoriId 
+            })
+        })
+        .then(response => response.text())
+        .then(result => {
+            statusPesan.style.color = "#27ae60";
+            statusPesan.textContent = result;
+            
+            setTimeout(() => {
+                window.location.href = 'riwayat.html';
+            }, 1500);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusPesan.style.color = "#c0392b";
+            statusPesan.textContent = "Gagal mengirim pesanan ke server!";
+        });
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+</script>
+
+</body>
+</html>

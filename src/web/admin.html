@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Penjualan Bibit Pepaya</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container { max-width: 950px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin: 40px auto; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f1f5f9; color: #1e293b; }
+        .btn-logout { background-color: #e74c3c; width: auto; padding: 8px 15px; font-size: 14px; border: none; color: white; border-radius: 5px; cursor: pointer; }
+        .btn-logout:hover { background-color: #c0392b; }
+        .btn-action { color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px; font-weight: 600; }
+        .btn-setuju { background-color: #27ae60; }
+        .btn-setuju:hover { background-color: #219653; }
+        .btn-tolak { background-color: #e74c3c; }
+        .btn-tolak:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    <div class="header-flex">
+        <h2>Dashboard Admin - Memproses Pembayaran & Pesanan</h2>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+
+    <p id="welcome-admin" style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;"></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Total Harga</th>
+                <th>Ongkir</th>
+                <th>Status</th>
+                <th>Tanggal Pesanan</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="tabel-pesanan">
+            <tr><td colspan="7" style="text-align: center;">Memuat data pesanan...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const role = localStorage.getItem('role');
+    const namaAdmin = localStorage.getItem('nama');
+
+    if (!role || role !== 'admin') {
+        alert("Akses ditolak! Anda harus login sebagai admin.");
+        window.location.href = 'login.html';
+    } else {
+        document.getElementById('welcome-admin').textContent = "Halo, " + namaAdmin + " (Admin)";
+    }
+
+    function muatDataPesanan() {
+        fetch('http://localhost:8080/api/admin/pesanan')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('tabel-pesanan');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Belum ada pesanan masuk.</td></tr>';
+                    return;
+                }
+
+                data.forEach(p => {
+                    let warnaStatus = "#e67e22";
+                    if (p.status_pesanan === 'Diproses') warnaStatus = "#27ae60";
+                    if (p.status_pesanan === 'Ditolak') warnaStatus = "#c0392b";
+
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${p.id_pesanan}</td>
+                        <td>${p.nama_customer}</td>
+                        <td>Rp ${Number(p.total_harga).toLocaleString()}</td>
+                        <td>Rp ${Number(p.ongkir).toLocaleString()}</td>
+                        <td><strong style="color: ${warnaStatus};">${p.status_pesanan}</strong></td>
+                        <td>${p.tanggal_pesanan}</td>
+                        <td>
+                            <button class="btn-action btn-setuju" onclick="ubahStatus(${p.id_pesanan}, 'Diproses')">Setujui</button>
+                            <button class="btn-action btn-tolak" onclick="ubahStatus(${p.id_pesanan}, 'Ditolak')">Tolak</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error("Gagal memuat pesanan admin:", err);
+                document.getElementById('tabel-pesanan').innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Gagal terhubung ke server!</td></tr>';
+            });
+    }
+
+    function ubahStatus(idPesanan, status) {
+        fetch('http://localhost:8080/api/admin/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_pesanan: idPesanan, status: status })
+        })
+        .then(res => res.text())
+        .then(msg => {
+            alert(msg);
+            muatDataPesanan();
+        })
+        .catch(err => {
+            console.error("Gagal update status:", err);
+            alert("Gagal memperbarui status pesanan!");
+        });
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    muatDataPesanan();
+</script>
+
+</body>
+</html>

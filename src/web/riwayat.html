@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Pesanan - Customer</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .cust-container { max-width: 800px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin: 40px auto; }
+        .nav-links { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f1f5f9; color: #1e293b; }
+        .btn-link { background-color: #3498db; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-size: 14px; }
+        .btn-link:hover { background-color: #2980b9; }
+        .btn-logout { background-color: #e74c3c; border: none; color: white; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+        .btn-logout:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="cust-container">
+    <div class="nav-links">
+        <a href="index.html" class="btn-link">← Buat Pesanan Baru</a>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+
+    <h2>Melihat Status Pesanan Saya</h2>
+    <p id="welcome-cust" style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;"></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID Pesanan</th>
+                <th>Total Harga</th>
+                <th>Ongkir</th>
+                <th>Status</th>
+                <th>Tanggal Pesanan</th>
+            </tr>
+        </thead>
+        <tbody id="tabel-riwayat">
+            <tr><td colspan="5" style="text-align: center;">Memuat status pesanan...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const idUser = localStorage.getItem('id_user');
+    const namaUser = localStorage.getItem('nama');
+    const role = localStorage.getItem('role');
+
+    if (!idUser || role !== 'customer') {
+        alert("Silakan login sebagai customer terlebih dahulu!");
+        window.location.href = 'login.html';
+    } else {
+        document.getElementById('welcome-cust').textContent = "Halo, " + namaUser;
+    }
+
+    fetch('http://localhost:8080/api/customer/pesanan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_user: parseInt(idUser) })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.getElementById('tabel-riwayat');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Belum ada pesanan untuk akun ini.</td></tr>';
+            return;
+        }
+
+        data.forEach(p => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>#${p.id_pesanan}</td>
+                <td>Rp ${Number(p.total_harga).toLocaleString()}</td>
+                <td>Rp ${Number(p.ongkir).toLocaleString()}</td>
+                <td><strong style="color: ${p.status_pesanan === 'Diproses' ? '#27ae60' : '#e67e22'};">${p.status_pesanan}</strong></td>
+                <td>${p.tanggal_pesanan}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(err => {
+        console.error("Gagal fetch riwayat:", err);
+        document.getElementById('tabel-riwayat').innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Gagal terhubung ke server!</td></tr>';
+    });
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+</script>
+
+</body>
+</html>
